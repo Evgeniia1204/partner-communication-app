@@ -1,0 +1,31 @@
+{
+  "name": "@partner/shared",
+  "version": "0.1.0",
+  "private": true,
+  "exports": {
+    "./constants": {
+      "types": "./dist/constants.d.ts",
+      "default": "./dist/constants.js"
+    },
+    "./errors": {
+      "types": "./dist/errors.d.ts",
+      "default": "./dist/errors.js"
+    },
+    "./inputs": {
+      "types": "./dist/inputs.d.ts",
+      "default": "./dist/inputs.js"
+    },
+    "./state-options": {
+      "types": "./dist/state-options.d.ts",
+      "default": "./dist/state-options.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix",
+    "lint:errors": "eslint src/**/*.ts --max-warnings 0",
+    "test": "jest --passWithNoTests"
+  }
+}

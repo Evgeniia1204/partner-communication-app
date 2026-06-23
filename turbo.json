@@ -1,0 +1,33 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalEnv": [
+    "DATABASE_URL",
+    "DIRECT_URL",
+    "TELEGRAM_BOT_TOKEN",
+    "TELEGRAM_BOT_USERNAME",
+    "TELEGRAM_WEBHOOK_SECRET",
+    "APP_PUBLIC_URL",
+    "PAIR_LINK_TTL_MINUTES",
+    "CHECK_IN_COMMENT_MAX_LENGTH",
+    "DEFAULT_TIMEZONE"
+  ],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {},
+    "lint:fix": {
+      "cache": false
+    },
+    "lint:errors": {},
+    "test": {
+      "dependsOn": ["^build"],
+      "outputs": []
+    }
+  }
+}

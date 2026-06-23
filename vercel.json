@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "buildCommand": "yarn db:generate && yarn build",
+  "installCommand": "yarn install --immutable",
+  "functions": {
+    "api/**/*.ts": {
+      "maxDuration": 30
+    }
+  }
+}

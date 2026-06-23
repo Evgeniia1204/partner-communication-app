@@ -1,0 +1,20 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "../..",
+    "baseUrl": ".",
+    "paths": {
+      "@bot/*": ["src/*"],
+      "@api/*": ["../api/src/*"],
+      "@core/*": ["../api/src/core/*"],
+      "@config/*": ["../api/src/config/*"],
+      "@prisma/*": ["../api/src/prisma/*"],
+      "@partner/shared/*": ["../../packages/shared/src/*"]
+    },
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  },
+  "include": ["src/**/*.ts", "../api/src/**/*.ts", "../../packages/shared/src/**/*.ts"],
+  "exclude": ["src/**/*.spec.ts", "../api/src/**/*.spec.ts", "../../packages/shared/src/**/*.spec.ts"]
+}

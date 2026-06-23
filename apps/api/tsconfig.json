@@ -1,0 +1,21 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "../..",
+    "baseUrl": ".",
+    "paths": {
+      "@core/*": ["src/core/*"],
+      "@config/*": ["src/config/*"],
+      "@prisma/*": ["src/prisma/*"],
+      "@shared/*": ["src/shared/*"],
+      "@notifications/*": ["src/core/notifications/*"],
+      "@telegram/*": ["../bot/src/telegram/*"],
+      "@partner/shared/*": ["../../packages/shared/src/*"]
+    },
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/**/*.spec.ts", "test/**/*.ts"]
+}

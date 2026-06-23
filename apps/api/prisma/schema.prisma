@@ -1,0 +1,154 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String   @id @default(cuid())
+  telegramId       String   @unique
+  telegramUsername String?
+  firstName        String?
+  lastName         String?
+  displayName      String
+  locale           String
+  timezone         String
+  isBotBlocked     Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  deletedAt        DateTime?
+
+  pairLinksCreated      PairLink[] @relation("PairLinkCreator")
+  pairLinksAccepted     PairLink[] @relation("PairLinkAcceptedBy")
+  couplesAsPartnerA     Couple[]   @relation("CouplePartnerA")
+  couplesAsPartnerB     Couple[]   @relation("CouplePartnerB")
+  checkIns              CheckIn[]
+  notificationPreference NotificationPreference?
+  reminderDeliveries    ReminderDeliveryLog[]
+  checkInDraft          CheckInDraft?
+}
+
+model Couple {
+  id                  String   @id @default(cuid())
+  partnerAId          String
+  partnerBId          String
+  createdByPairLinkId String?  @unique
+  createdAt           DateTime @default(now())
+  endedAt             DateTime?
+
+  partnerA          User      @relation("CouplePartnerA", fields: [partnerAId], references: [id])
+  partnerB          User      @relation("CouplePartnerB", fields: [partnerBId], references: [id])
+  createdByPairLink PairLink? @relation(fields: [createdByPairLinkId], references: [id])
+  checkIns          CheckIn[]
+
+  @@index([partnerAId, endedAt])
+  @@index([partnerBId, endedAt])
+}
+
+model PairLink {
+  id           String    @id @default(cuid())
+  creatorId    String
+  tokenHash    String    @unique
+  expiresAt    DateTime
+  acceptedById String?
+  acceptedAt   DateTime?
+  createdAt    DateTime  @default(now())
+
+  creator    User    @relation("PairLinkCreator", fields: [creatorId], references: [id])
+  acceptedBy User?   @relation("PairLinkAcceptedBy", fields: [acceptedById], references: [id])
+  couple     Couple?
+}
+
+model CheckIn {
+  id                         String   @id @default(cuid())
+  userId                     String
+  coupleId                   String
+  physicalStateKey           String
+  communicationPreferenceKey String
+  intimacyPreferenceKey      String
+  comment                    String?
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
+
+  user            User                    @relation(fields: [userId], references: [id])
+  couple          Couple                  @relation(fields: [coupleId], references: [id])
+  moods           CheckInMood[]
+  pleasantActions CheckInPleasantAction[]
+
+  @@index([userId, createdAt])
+  @@index([coupleId, createdAt])
+}
+
+model CheckInMood {
+  id        String   @id @default(cuid())
+  checkInId String
+  moodKey   String
+  createdAt DateTime @default(now())
+
+  checkIn CheckIn @relation(fields: [checkInId], references: [id], onDelete: Cascade)
+}
+
+model CheckInPleasantAction {
+  id                String   @id @default(cuid())
+  checkInId          String
+  pleasantActionKey  String
+  createdAt          DateTime @default(now())
+
+  checkIn CheckIn @relation(fields: [checkInId], references: [id], onDelete: Cascade)
+}
+
+model NotificationPreference {
+  id                                String   @id @default(cuid())
+  userId                            String   @unique
+  firstHalfOfDayEnabled             Boolean  @default(true)
+  firstHalfOfDayTime                String
+  secondHalfOfDayEnabled            Boolean  @default(true)
+  secondHalfOfDayTime               String
+  partnerUpdateNotificationsEnabled Boolean  @default(true)
+  createdAt                         DateTime @default(now())
+  updatedAt                         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model TelegramUpdateLog {
+  id               String   @id @default(cuid())
+  telegramUpdateId String   @unique
+  processedAt      DateTime
+  createdAt        DateTime @default(now())
+}
+
+model ReminderDeliveryLog {
+  id        String   @id @default(cuid())
+  userId    String
+  period    String
+  localDate String
+  sentAt    DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, period, localDate])
+}
+
+model CheckInDraft {
+  id                         String   @id @default(cuid())
+  userId                     String   @unique
+  physicalStateKey           String?
+  moodKeys                   String[]
+  communicationPreferenceKey String?
+  intimacyPreferenceKey      String?
+  pleasantActionKeys         String[]
+  waitingForComment          Boolean  @default(false)
+  comment                    String?
+  expiresAt                  DateTime
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([expiresAt])
+}

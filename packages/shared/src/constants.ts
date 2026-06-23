@@ -1,0 +1,8 @@
+export const DEFAULT_PAIR_LINK_TTL_MINUTES = 1440;
+export const CHECK_IN_COMMENT_MAX_LENGTH = 500;
+export const CHECK_IN_DRAFT_TTL_SECONDS = 900;
+export const MAX_SELECTIONS_PER_CHECK_IN_BLOCK = 1;
+export const DEFAULT_LOCALE = 'ru';
+export const DEFAULT_TIMEZONE = 'Europe/Berlin';
+export const DEFAULT_FIRST_HALF_OF_DAY_TIME = '10:00';
+export const DEFAULT_SECOND_HALF_OF_DAY_TIME = '19:00';
