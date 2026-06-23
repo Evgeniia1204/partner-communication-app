@@ -28,7 +28,16 @@ import { CheckInKeyboardRenderer } from '../renderers/check-in-keyboard.renderer
 import { MenuRenderer } from '../renderers/menu.renderer';
 
 const PAIR_PAYLOAD_PREFIX = 'pair_';
-const TIMEZONE_OPTIONS = [{ label: 'Europe', value: 'Europe/Berlin' }] as const;
+const TIMEZONE_OPTIONS = [
+  { label: 'Европа', value: 'Europe/Berlin' },
+  { label: 'Бали / Makassar', value: 'Asia/Makassar' },
+  { label: 'Бангкок', value: 'Asia/Bangkok' },
+  { label: 'Дубай', value: 'Asia/Dubai' },
+  { label: 'Тбилиси', value: 'Asia/Tbilisi' },
+  { label: 'Лондон', value: 'Europe/London' },
+  { label: 'Нью-Йорк', value: 'America/New_York' },
+  { label: 'Лос-Анджелес', value: 'America/Los_Angeles' },
+] as const;
 const REMINDER_POLL_INTERVAL_MS = 60_000;
 
 @Injectable()
@@ -441,8 +450,13 @@ export class TelegramBotService implements OnModuleDestroy {
     if (!telegramId) {
       return;
     }
+    const selectedTimezone = TIMEZONE_OPTIONS.find((option) => option.value === timezone);
+    if (!selectedTimezone) {
+      await ctx.reply(this.renderError(new Error('Invalid timezone'), this.locale(ctx)));
+      return;
+    }
     await this.updateProfile.execute({ telegramUserId: telegramId, timezone });
-    await ctx.reply(`Часовой пояс: ${timezone}`);
+    await ctx.reply(`Часовой пояс: ${selectedTimezone.label}`);
     await this.showMenu(ctx);
   }
 

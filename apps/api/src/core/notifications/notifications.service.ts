@@ -35,7 +35,7 @@ export class NotificationsService {
         userId: user.id,
         firstHalfOfDayEnabled: true,
         firstHalfOfDayTime: DEFAULT_FIRST_HALF_OF_DAY_TIME,
-        secondHalfOfDayEnabled: true,
+        secondHalfOfDayEnabled: false,
         secondHalfOfDayTime: DEFAULT_SECOND_HALF_OF_DAY_TIME,
         partnerUpdateNotificationsEnabled: true,
       },
