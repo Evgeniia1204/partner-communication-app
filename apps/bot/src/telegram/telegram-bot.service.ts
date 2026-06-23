@@ -117,6 +117,7 @@ export class TelegramBotService implements OnModuleDestroy {
         String(ctx.update.update_id),
       );
       if (shouldProcess) {
+        await this.upsertCurrentTelegramUser(ctx);
         await next();
       }
     });
@@ -138,14 +139,10 @@ export class TelegramBotService implements OnModuleDestroy {
     }
 
     const payload = this.startPayload(ctx);
-    const user = await this.upsertTelegramUser.execute({
-      telegramId,
-      username: ctx.from?.username,
-      firstName: ctx.from?.first_name,
-      lastName: ctx.from?.last_name,
-      languageCode: ctx.from?.language_code,
-      startPayload: payload,
-    });
+    const user = await this.upsertCurrentTelegramUser(ctx, payload);
+    if (!user) {
+      return;
+    }
 
     if (payload?.startsWith(PAIR_PAYLOAD_PREFIX)) {
       await this.acceptPairPayload(ctx, telegramId, user.locale, payload);
@@ -179,13 +176,10 @@ export class TelegramBotService implements OnModuleDestroy {
     if (!telegramId) {
       return;
     }
-    const user = await this.upsertTelegramUser.execute({
-      telegramId,
-      username: ctx.from?.username,
-      firstName: ctx.from?.first_name,
-      lastName: ctx.from?.last_name,
-      languageCode: ctx.from?.language_code,
-    });
+    const user = await this.upsertCurrentTelegramUser(ctx);
+    if (!user) {
+      return;
+    }
     const couple = await this.getCurrentCouple.execute(telegramId);
     await ctx.reply('Меню', this.menu.reply(user.locale, Boolean(couple)));
     await ctx.reply('Выбери действие:', this.menu.main(user.locale, Boolean(couple)));
@@ -523,5 +517,20 @@ export class TelegramBotService implements OnModuleDestroy {
     }
     const [, payload] = ctx.message.text.split(' ');
     return payload ?? null;
+  }
+
+  private async upsertCurrentTelegramUser(ctx: Context, startPayload?: string | null) {
+    const telegramId = this.telegramId(ctx);
+    if (!telegramId) {
+      return null;
+    }
+    return this.upsertTelegramUser.execute({
+      telegramId,
+      username: ctx.from?.username,
+      firstName: ctx.from?.first_name,
+      lastName: ctx.from?.last_name,
+      languageCode: ctx.from?.language_code,
+      startPayload,
+    });
   }
 }
