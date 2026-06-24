@@ -16,11 +16,16 @@ Postgres is hosted in Supabase. Prisma migrations are stored in
 `apps/api/prisma/migrations` and can be applied to Supabase through the Supabase
 CLI or Prisma when a database connection string is available.
 
-## Vercel Hobby Cron Limitation
+## Vercel Hobby Cron
 
-The Vercel Hobby plan allows only daily cron schedules. The MVP needs morning
-and evening reminder checks, so production reminders require one of these:
+The Vercel Hobby plan allows daily cron schedules. Production uses one daily
+cron call:
+
+- `0 2 * * *` UTC, which is `10:00` in `Asia/Makassar`.
+
+This covers the current production users. To support `10:00` local time across
+many timezones, production will need one of these:
 
 - Vercel Pro cron with a frequent schedule that calls `/api/cron/reminders`;
-- an external scheduler that calls `/api/cron/reminders`;
+- an external scheduler that calls `/api/cron/reminders` frequently;
 - a future always-on worker service.

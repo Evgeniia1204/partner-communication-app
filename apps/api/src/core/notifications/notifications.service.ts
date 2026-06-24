@@ -90,7 +90,7 @@ export class NotificationsService {
       ] as const;
 
       for (const candidate of candidates) {
-        if (!candidate.enabled || candidate.time !== local.time) {
+        if (!candidate.enabled || this.timeToMinutes(local.time) < this.timeToMinutes(candidate.time)) {
           continue;
         }
         const alreadySent = await this.prisma.reminderDeliveryLog.findUnique({
@@ -155,5 +155,10 @@ export class NotificationsService {
       date: `${value('year')}-${value('month')}-${value('day')}`,
       time: `${value('hour')}:${value('minute')}`,
     };
+  }
+
+  private timeToMinutes(value: string): number {
+    const [hours, minutes] = value.split(':').map(Number);
+    return hours * 60 + minutes;
   }
 }
