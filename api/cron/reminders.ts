@@ -12,6 +12,6 @@ export default async function handler(
   }
 
   const bot = await getTelegramBotService();
-  await bot.sendDueReminders();
-  response.status(200).json({ ok: true });
+  const result = await bot.sendDueReminders();
+  response.status(200).json({ ok: true, ...result });
 }

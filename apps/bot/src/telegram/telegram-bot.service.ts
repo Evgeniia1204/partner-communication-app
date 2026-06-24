@@ -98,8 +98,10 @@ export class TelegramBotService implements OnModuleDestroy {
     await this.bot.handleUpdate(update);
   }
 
-  public async sendDueReminders(): Promise<void> {
+  public async sendDueReminders(): Promise<{ due: number; sent: number; failed: number }> {
     const reminders = await this.notificationsService.findDueReminders(new Date());
+    let sent = 0;
+    let failed = 0;
     for (const reminder of reminders) {
       const t = this.i18n.get(reminder.locale);
       try {
@@ -111,10 +113,16 @@ export class TelegramBotService implements OnModuleDestroy {
           ]),
         );
         await this.notificationsService.markReminderSent(reminder);
-      } catch {
+        sent += 1;
+      } catch (error) {
+        failed += 1;
+        const details = error instanceof Error ? error.stack : String(error);
+        this.logger.error(`Reminder delivery failed for user ${reminder.userId}`, details);
         await this.usersService.markBotBlocked(reminder.userId);
       }
     }
+    this.logger.log(`Reminder run finished: due=${reminders.length}, sent=${sent}, failed=${failed}`);
+    return { due: reminders.length, sent, failed };
   }
 
   private registerHandlers(): void {
