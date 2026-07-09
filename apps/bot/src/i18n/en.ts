@@ -1,9 +1,18 @@
 export const en = {
   start: {
     welcome: 'Hi. I help you quickly share your current state with your partner.',
+    chooseLanguage: 'Choose language / Выбери язык',
     chooseTimezone: 'Choose your timezone so reminders arrive at a comfortable time.',
   },
+  settings: {
+    title: 'Settings',
+    language: 'Language',
+    timezone: 'Timezone',
+    languageSaved: 'Language saved.',
+  },
   menu: {
+    title: 'Menu',
+    chooseAction: 'Choose an action:',
     createPairLink: 'Create pair link',
     connectPair: 'Connect to pair',
     updateState: 'Update state',
@@ -12,6 +21,7 @@ export const en = {
     settings: 'Settings',
     back: 'Back',
     cancel: 'Cancel',
+    myStateSoon: 'This will become a separate screen soon. For now, you can update your state or view your partner state.',
   },
   pair: {
     linkCreated: 'Your pair link is ready. Send it to your partner once:',

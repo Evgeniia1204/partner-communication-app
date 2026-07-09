@@ -28,6 +28,10 @@ import { CheckInKeyboardRenderer } from '../renderers/check-in-keyboard.renderer
 import { MenuRenderer } from '../renderers/menu.renderer';
 
 const PAIR_PAYLOAD_PREFIX = 'pair_';
+const LANGUAGE_OPTIONS = [
+  { label: 'Русский', value: 'ru' },
+  { label: 'English', value: 'en' },
+] as const;
 const TIMEZONE_OPTIONS = [
   { label: 'Европа', value: 'Europe/Berlin' },
   { label: 'Бали / Makassar', value: 'Asia/Makassar' },
@@ -143,7 +147,7 @@ export class TelegramBotService implements OnModuleDestroy {
     this.bot.command('pair', (ctx) => this.handleCreatePairLink(ctx));
     this.bot.command('checkin', (ctx) => this.startCheckIn(ctx));
     this.bot.command('partner', (ctx) => this.showPartnerState(ctx));
-    this.bot.command('settings', (ctx) => this.showTimezoneSettings(ctx));
+    this.bot.command('settings', (ctx) => this.showSettings(ctx));
     this.bot.command('help', (ctx) => this.showMenu(ctx));
     this.bot.on('callback_query', (ctx) => this.handleCallback(ctx));
     this.bot.on('text', (ctx) => this.handleText(ctx));
@@ -161,15 +165,7 @@ export class TelegramBotService implements OnModuleDestroy {
       return;
     }
 
-    if (payload?.startsWith(PAIR_PAYLOAD_PREFIX)) {
-      await this.acceptPairPayload(ctx, telegramId, user.locale, payload);
-      return;
-    }
-
-    const t = this.i18n.get(user.locale);
-    await ctx.reply(t.start.welcome);
-    await this.showTimezoneSettings(ctx);
-    await this.showMenu(ctx);
+    await this.showLanguageSettings(ctx, payload ? payload : 'start');
   }
 
   private async acceptPairPayload(
@@ -198,8 +194,9 @@ export class TelegramBotService implements OnModuleDestroy {
       return;
     }
     const couple = await this.getCurrentCouple.execute(telegramId);
-    await ctx.reply('Меню', this.menu.reply(user.locale, Boolean(couple)));
-    await ctx.reply('Выбери действие:', this.menu.main(user.locale, Boolean(couple)));
+    const t = this.i18n.get(user.locale);
+    await ctx.reply(t.menu.title, this.menu.reply(user.locale, Boolean(couple)));
+    await ctx.reply(t.menu.chooseAction, this.menu.main(user.locale, Boolean(couple)));
   }
 
   private async handleCallback(ctx: Context): Promise<void> {
@@ -216,6 +213,18 @@ export class TelegramBotService implements OnModuleDestroy {
     }
     if (data === 'partner:current') {
       await this.showPartnerState(ctx);
+      return;
+    }
+    if (data === 'settings:main') {
+      await this.showSettings(ctx);
+      return;
+    }
+    if (data === 'settings:locale') {
+      await this.showLanguageSettings(ctx);
+      return;
+    }
+    if (data.startsWith('settings:locale:')) {
+      await this.saveLocale(ctx, data);
       return;
     }
     if (data === 'settings:timezone') {
@@ -245,7 +254,7 @@ export class TelegramBotService implements OnModuleDestroy {
     if (!telegramId) {
       return;
     }
-    const locale = this.locale(ctx);
+    const locale = await this.localeFor(ctx);
     const t = this.i18n.get(locale);
     try {
       const pairLink = await this.createPairLink.execute({ telegramUserId: telegramId });
@@ -260,7 +269,7 @@ export class TelegramBotService implements OnModuleDestroy {
     if (!telegramId) {
       return;
     }
-    const locale = this.locale(ctx);
+    const locale = await this.localeFor(ctx);
     const t = this.i18n.get(locale);
     try {
       await this.getCurrentCouple.execute(telegramId);
@@ -276,7 +285,7 @@ export class TelegramBotService implements OnModuleDestroy {
     if (!telegramId) {
       return;
     }
-    const locale = this.locale(ctx);
+    const locale = await this.localeFor(ctx);
     const t = this.i18n.get(locale);
     const draft = await this.drafts.get(telegramId);
 
@@ -354,7 +363,7 @@ export class TelegramBotService implements OnModuleDestroy {
     if (!telegramId || !('text' in ctx.message!)) {
       return;
     }
-    const locale = this.locale(ctx);
+    const locale = await this.localeFor(ctx);
     const t = this.i18n.get(locale);
     const text = ctx.message.text;
 
@@ -371,11 +380,11 @@ export class TelegramBotService implements OnModuleDestroy {
       return;
     }
     if (text === t.menu.settings) {
-      await this.showTimezoneSettings(ctx);
+      await this.showSettings(ctx);
       return;
     }
     if (text === t.menu.myState) {
-      await ctx.reply('Этот пункт скоро станет отдельным экраном. Пока можно обновить состояние или посмотреть состояние партнёра.');
+      await ctx.reply(t.menu.myStateSoon);
       return;
     }
 
@@ -420,7 +429,7 @@ export class TelegramBotService implements OnModuleDestroy {
     if (!telegramId) {
       return;
     }
-    const locale = this.locale(ctx);
+    const locale = await this.localeFor(ctx);
     const t = this.i18n.get(locale);
     try {
       const result = await this.getPartnerCurrentCheckIn.execute(telegramId);
@@ -437,11 +446,66 @@ export class TelegramBotService implements OnModuleDestroy {
   ): Promise<void> {
     const t = this.i18n.get(locale);
     await ctx.telegram.sendMessage(telegramId, t.pair.created, this.menu.reply(locale, true));
-    await ctx.telegram.sendMessage(telegramId, 'Выбери действие:', this.menu.main(locale, true));
+    await ctx.telegram.sendMessage(telegramId, t.menu.chooseAction, this.menu.main(locale, true));
+  }
+
+  private async showSettings(ctx: Context): Promise<void> {
+    const locale = await this.localeFor(ctx);
+    const t = this.i18n.get(locale);
+    await ctx.reply(
+      t.settings.title,
+      Markup.inlineKeyboard([
+        [Markup.button.callback(t.settings.language, 'settings:locale')],
+        [Markup.button.callback(t.settings.timezone, 'settings:timezone')],
+      ]),
+    );
+  }
+
+  private async showLanguageSettings(ctx: Context, nextPayload?: string | null): Promise<void> {
+    await ctx.reply(
+      this.i18n.get('ru').start.chooseLanguage,
+      Markup.inlineKeyboard(
+        LANGUAGE_OPTIONS.map((language) => [
+          Markup.button.callback(
+            language.label,
+            nextPayload
+              ? `settings:locale:${language.value}:${nextPayload}`
+              : `settings:locale:${language.value}`,
+          ),
+        ]),
+      ),
+    );
+  }
+
+  private async saveLocale(ctx: Context, data: string): Promise<void> {
+    const telegramId = this.telegramId(ctx);
+    if (!telegramId) {
+      return;
+    }
+    const [, , locale, nextPayload] = data.split(':');
+    const normalizedLocale = this.i18n.normalize(locale);
+    await this.updateProfile.execute({ telegramUserId: telegramId, locale: normalizedLocale });
+    const t = this.i18n.get(normalizedLocale);
+
+    if (nextPayload?.startsWith(PAIR_PAYLOAD_PREFIX)) {
+      await ctx.reply(t.start.welcome);
+      await this.acceptPairPayload(ctx, telegramId, normalizedLocale, nextPayload);
+      await this.showTimezoneSettings(ctx);
+      return;
+    }
+    if (nextPayload === 'start') {
+      await ctx.reply(t.start.welcome);
+      await this.showTimezoneSettings(ctx);
+      await this.showMenu(ctx);
+      return;
+    }
+
+    await ctx.reply(t.settings.languageSaved);
+    await this.showSettings(ctx);
   }
 
   private async showTimezoneSettings(ctx: Context): Promise<void> {
-    const locale = this.locale(ctx);
+    const locale = await this.localeFor(ctx);
     const t = this.i18n.get(locale);
     await ctx.reply(
       t.start.chooseTimezone,
@@ -460,7 +524,7 @@ export class TelegramBotService implements OnModuleDestroy {
     }
     const selectedTimezone = TIMEZONE_OPTIONS.find((option) => option.value === timezone);
     if (!selectedTimezone) {
-      await ctx.reply(this.renderError(new Error('Invalid timezone'), this.locale(ctx)));
+      await ctx.reply(this.renderError(new Error('Invalid timezone'), await this.localeFor(ctx)));
       return;
     }
     await this.updateProfile.execute({ telegramUserId: telegramId, timezone });
@@ -521,8 +585,13 @@ export class TelegramBotService implements OnModuleDestroy {
     return ctx.from?.id ? String(ctx.from.id) : null;
   }
 
-  private locale(ctx: Context): string {
-    return this.i18n.normalize(ctx.from?.language_code);
+  private async localeFor(ctx: Context): Promise<string> {
+    const telegramId = this.telegramId(ctx);
+    if (!telegramId) {
+      return this.i18n.normalize(ctx.from?.language_code);
+    }
+    const user = await this.usersService.findByTelegramId(telegramId);
+    return this.i18n.normalize(user?.locale ?? ctx.from?.language_code);
   }
 
   private callbackData(ctx: Context): string | null {

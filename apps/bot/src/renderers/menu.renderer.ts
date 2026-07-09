@@ -11,13 +11,13 @@ export class MenuRenderer {
     if (!hasCouple) {
       return Markup.inlineKeyboard([
         [Markup.button.callback(t.menu.createPairLink, 'pair:create_link')],
-        [Markup.button.callback(t.menu.settings, 'settings:timezone')],
+        [Markup.button.callback(t.menu.settings, 'settings:main')],
       ]);
     }
     return Markup.inlineKeyboard([
       [Markup.button.callback(t.menu.updateState, 'checkin:start')],
       [Markup.button.callback(t.menu.partnerState, 'partner:current')],
-      [Markup.button.callback(t.menu.settings, 'settings:timezone')],
+      [Markup.button.callback(t.menu.settings, 'settings:main')],
     ]);
   }
 

@@ -39,7 +39,6 @@ export class UsersService {
         firstName: input.firstName,
         lastName: input.lastName,
         displayName,
-        locale: DEFAULT_LOCALE,
         isBotBlocked: false,
       },
     });

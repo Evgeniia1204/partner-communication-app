@@ -172,7 +172,10 @@ Infrastructure
 2. Нажимает Start.
 3. Бот получает Telegram `id`, `username`, `first_name`, `last_name`, `language_code`.
 4. Backend создаёт или обновляет `User`.
-5. Бот показывает главное меню:
+5. Бот просит выбрать язык: русский или английский.
+6. Backend сохраняет выбранный `locale` в `User.locale`.
+7. Бот просит выбрать timezone для напоминаний.
+8. Бот показывает главное меню:
    - создать пару;
    - присоединиться по ссылке, если пользователь пришёл через deep link;
    - обновить состояние, если пара уже есть;
@@ -628,8 +631,10 @@ checkin:confirm
 pair:create_link
 partner:current
 settings:notifications
+settings:main
 settings:timezone
 settings:locale
+settings:locale:<locale>
 ```
 
 Callback payloads должны быть короткими и стабильными.
