@@ -38,7 +38,6 @@ export class UsersService {
         telegramUsername: input.username,
         firstName: input.firstName,
         lastName: input.lastName,
-        displayName,
         isBotBlocked: false,
       },
     });
@@ -63,6 +62,8 @@ export class UsersService {
         displayName: input.displayName,
         locale: input.locale,
         timezone: input.timezone,
+        waitingForDisplayName: input.waitingForDisplayName,
+        pendingStartPayload: input.pendingStartPayload,
       },
     });
   }

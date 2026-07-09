@@ -29,6 +29,8 @@ export interface UpdateProfileInput {
   displayName?: string;
   locale?: string;
   timezone?: string;
+  waitingForDisplayName?: boolean;
+  pendingStartPayload?: string | null;
 }
 
 export interface CreateCheckInInput {

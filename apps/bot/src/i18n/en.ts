@@ -2,6 +2,8 @@ export const en = {
   start: {
     welcome: 'Hi. I help you quickly share your current state with your partner.',
     chooseLanguage: 'Choose language / Выбери язык',
+    askDisplayName: 'What should I call you in the bot? Write your name in one message.',
+    displayNameSaved: 'Nice to meet you, {name}.',
     chooseTimezone: 'Choose your timezone so reminders arrive at a comfortable time.',
   },
   settings: {
@@ -21,7 +23,8 @@ export const en = {
     settings: 'Settings',
     back: 'Back',
     cancel: 'Cancel',
-    myStateSoon: 'This will become a separate screen soon. For now, you can update your state or view your partner state.',
+    myStateSoon:
+      'This will become a separate screen soon. For now, you can update your state or view your partner state.',
   },
   pair: {
     linkCreated: 'Your pair link is ready. Send it to your partner once:',

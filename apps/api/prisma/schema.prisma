@@ -8,35 +8,37 @@ datasource db {
 }
 
 model User {
-  id               String   @id @default(cuid())
-  telegramId       String   @unique
-  telegramUsername String?
-  firstName        String?
-  lastName         String?
-  displayName      String
-  locale           String
-  timezone         String
-  isBotBlocked     Boolean  @default(false)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  deletedAt        DateTime?
+  id                    String    @id @default(cuid())
+  telegramId            String    @unique
+  telegramUsername      String?
+  firstName             String?
+  lastName              String?
+  displayName           String
+  locale                String
+  timezone              String
+  waitingForDisplayName Boolean   @default(false)
+  pendingStartPayload   String?
+  isBotBlocked          Boolean   @default(false)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  deletedAt             DateTime?
 
-  pairLinksCreated      PairLink[] @relation("PairLinkCreator")
-  pairLinksAccepted     PairLink[] @relation("PairLinkAcceptedBy")
-  couplesAsPartnerA     Couple[]   @relation("CouplePartnerA")
-  couplesAsPartnerB     Couple[]   @relation("CouplePartnerB")
-  checkIns              CheckIn[]
+  pairLinksCreated       PairLink[]              @relation("PairLinkCreator")
+  pairLinksAccepted      PairLink[]              @relation("PairLinkAcceptedBy")
+  couplesAsPartnerA      Couple[]                @relation("CouplePartnerA")
+  couplesAsPartnerB      Couple[]                @relation("CouplePartnerB")
+  checkIns               CheckIn[]
   notificationPreference NotificationPreference?
-  reminderDeliveries    ReminderDeliveryLog[]
-  checkInDraft          CheckInDraft?
+  reminderDeliveries     ReminderDeliveryLog[]
+  checkInDraft           CheckInDraft?
 }
 
 model Couple {
-  id                  String   @id @default(cuid())
+  id                  String    @id @default(cuid())
   partnerAId          String
   partnerBId          String
-  createdByPairLinkId String?  @unique
-  createdAt           DateTime @default(now())
+  createdByPairLinkId String?   @unique
+  createdAt           DateTime  @default(now())
   endedAt             DateTime?
 
   partnerA          User      @relation("CouplePartnerA", fields: [partnerAId], references: [id])
@@ -93,9 +95,9 @@ model CheckInMood {
 
 model CheckInPleasantAction {
   id                String   @id @default(cuid())
-  checkInId          String
-  pleasantActionKey  String
-  createdAt          DateTime @default(now())
+  checkInId         String
+  pleasantActionKey String
+  createdAt         DateTime @default(now())
 
   checkIn CheckIn @relation(fields: [checkInId], references: [id], onDelete: Cascade)
 }

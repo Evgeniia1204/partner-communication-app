@@ -28,6 +28,7 @@ import { CheckInKeyboardRenderer } from '../renderers/check-in-keyboard.renderer
 import { MenuRenderer } from '../renderers/menu.renderer';
 
 const PAIR_PAYLOAD_PREFIX = 'pair_';
+const DISPLAY_NAME_MAX_LENGTH = 60;
 const LANGUAGE_OPTIONS = [
   { label: 'Русский', value: 'ru' },
   { label: 'English', value: 'en' },
@@ -112,9 +113,7 @@ export class TelegramBotService implements OnModuleDestroy {
         await this.bot.telegram.sendMessage(
           reminder.telegramId,
           t.reminders.updateState,
-          Markup.inlineKeyboard([
-            [Markup.button.callback(t.menu.updateState, 'checkin:start')],
-          ]),
+          Markup.inlineKeyboard([[Markup.button.callback(t.menu.updateState, 'checkin:start')]]),
         );
         await this.notificationsService.markReminderSent(reminder);
         sent += 1;
@@ -125,7 +124,9 @@ export class TelegramBotService implements OnModuleDestroy {
         await this.usersService.markBotBlocked(reminder.userId);
       }
     }
-    this.logger.log(`Reminder run finished: due=${reminders.length}, sent=${sent}, failed=${failed}`);
+    this.logger.log(
+      `Reminder run finished: due=${reminders.length}, sent=${sent}, failed=${failed}`,
+    );
     return { due: reminders.length, sent, failed };
   }
 
@@ -366,6 +367,12 @@ export class TelegramBotService implements OnModuleDestroy {
     const locale = await this.localeFor(ctx);
     const t = this.i18n.get(locale);
     const text = ctx.message.text;
+    const user = await this.usersService.findByTelegramId(telegramId);
+
+    if (user?.waitingForDisplayName) {
+      await this.saveDisplayName(ctx, text, locale, user.pendingStartPayload);
+      return;
+    }
 
     if (text === t.menu.updateState) {
       await this.startCheckIn(ctx);
@@ -400,7 +407,11 @@ export class TelegramBotService implements OnModuleDestroy {
 
   private async submitDraft(ctx: Context, telegramId: string, locale: string): Promise<void> {
     const draft = await this.drafts.get(telegramId);
-    if (!draft.physicalStateKey || !draft.communicationPreferenceKey || !draft.intimacyPreferenceKey) {
+    if (
+      !draft.physicalStateKey ||
+      !draft.communicationPreferenceKey ||
+      !draft.intimacyPreferenceKey
+    ) {
       await ctx.reply(this.renderError(new Error('Incomplete draft'), locale));
       return;
     }
@@ -487,21 +498,58 @@ export class TelegramBotService implements OnModuleDestroy {
     await this.updateProfile.execute({ telegramUserId: telegramId, locale: normalizedLocale });
     const t = this.i18n.get(normalizedLocale);
 
-    if (nextPayload?.startsWith(PAIR_PAYLOAD_PREFIX)) {
+    if (nextPayload?.startsWith(PAIR_PAYLOAD_PREFIX) || nextPayload === 'start') {
+      await this.updateProfile.execute({
+        telegramUserId: telegramId,
+        waitingForDisplayName: true,
+        pendingStartPayload: nextPayload,
+      });
       await ctx.reply(t.start.welcome);
-      await this.acceptPairPayload(ctx, telegramId, normalizedLocale, nextPayload);
-      await this.showTimezoneSettings(ctx);
-      return;
-    }
-    if (nextPayload === 'start') {
-      await ctx.reply(t.start.welcome);
-      await this.showTimezoneSettings(ctx);
-      await this.showMenu(ctx);
+      await ctx.reply(t.start.askDisplayName);
       return;
     }
 
     await ctx.reply(t.settings.languageSaved);
     await this.showSettings(ctx);
+  }
+
+  private async saveDisplayName(
+    ctx: Context,
+    text: string,
+    locale: string,
+    pendingStartPayload?: string | null,
+  ): Promise<void> {
+    const telegramId = this.telegramId(ctx);
+    if (!telegramId) {
+      return;
+    }
+    const t = this.i18n.get(locale);
+    const displayName = text.replace(/\s+/g, ' ').trim().slice(0, DISPLAY_NAME_MAX_LENGTH);
+    if (!displayName) {
+      await ctx.reply(t.start.askDisplayName);
+      return;
+    }
+
+    await this.updateProfile.execute({
+      telegramUserId: telegramId,
+      displayName,
+      waitingForDisplayName: false,
+      pendingStartPayload: null,
+    });
+    await ctx.reply(t.start.displayNameSaved.replace('{name}', displayName));
+
+    if (pendingStartPayload?.startsWith(PAIR_PAYLOAD_PREFIX)) {
+      await this.acceptPairPayload(ctx, telegramId, locale, pendingStartPayload);
+      await this.showTimezoneSettings(ctx);
+      return;
+    }
+    if (pendingStartPayload === 'start') {
+      await this.showTimezoneSettings(ctx);
+      await this.showMenu(ctx);
+      return;
+    }
+
+    await this.showMenu(ctx);
   }
 
   private async showTimezoneSettings(ctx: Context): Promise<void> {
