@@ -77,6 +77,10 @@ export class CheckInsService {
   }
 
   public async getPartnerCurrent(telegramUserId: string) {
+    const viewer = await this.usersService.findByTelegramId(telegramUserId);
+    if (!viewer) {
+      throw new DomainError(ERROR_CODES.TELEGRAM_USER_NOT_FOUND, 'Telegram user not found');
+    }
     const partner = await this.couplesService.getPartnerForTelegramUser(telegramUserId);
     const checkIn = await this.findLatestForUser(partner.id);
     if (!checkIn) {
@@ -86,6 +90,7 @@ export class CheckInsService {
       checkIn,
       summary: this.summary.build({
         displayName: partner.displayName,
+        locale: viewer.locale,
         physicalStateKey: checkIn.physicalStateKey as PhysicalStateKey,
         moodKeys: checkIn.moods.map((mood) => mood.moodKey as MoodKey),
         communicationPreferenceKey:
